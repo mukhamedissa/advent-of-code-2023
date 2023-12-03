@@ -6,6 +6,9 @@ fun main() {
 
 private fun Char.isSymbol(): Boolean = this != '.' && !this.isDigit()
 
+private fun List<List<Char>>.areBoundsCorrect(i: Int, j: Int): Boolean =
+    i >= 0 && i <= size - 1 && j >= 0 && j <= this[i].size - 1
+
 val directions = listOf(-1 to 0, 1 to 0, 0 to -1, 0 to 1, -1 to -1, -1 to 1, 1 to -1, 1 to 1)
 
 private fun partOne(engine: List<List<Char>>) {
@@ -21,8 +24,7 @@ private fun partOne(engine: List<List<Char>>) {
             val adjacencyList = ArrayList<Boolean>()
             while (j < engine[i].size && engine[i][j].isDigit()) {
                 directions.forEach { (dirI, dirJ) ->
-                    if (i + dirI >= 0 && i + dirI <= engine.size - 1
-                        && j + dirJ >= 0 && j + dirJ <= engine[i].size - 1) {
+                    if (engine.areBoundsCorrect(i + dirI, j + dirJ)) {
                         adjacencyList.add(engine[i + dirI][j + dirJ].isSymbol())
                     }
                 }
@@ -49,9 +51,7 @@ private fun partTwo(engine: List<List<Char>>) {
             }
             val adjacentNumbers = HashSet<Int>()
             directions.forEach { (dirI, dirJ) ->
-                if (i + dirI >= 0 && i + dirI <= engine.size - 1
-                    && j + dirJ >= 0 && j + dirJ <= engine[i].size - 1
-                    && engine[i + dirI][j + dirJ].isDigit()) {
+                if (engine.areBoundsCorrect(i + dirI, j + dirJ) && engine[i + dirI][j + dirJ].isDigit()) {
                     adjacentNumbers.add(extractNumberForPosition(engine,i + dirI, j + dirJ))
                 }
             }
