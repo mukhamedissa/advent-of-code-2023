@@ -3,62 +3,31 @@ import kotlin.math.abs
 private typealias GalaxyPosition = Pair<Long, Long>
 private typealias Image = MutableList<MutableList<Char>>
 
-private fun getImageFromFile(): MutableList<MutableList<Char>> =
+fun main() {
     getLinesFromFile("day_eleven.txt")
         .map { it.toMutableList() }
         .toMutableList()
-
-fun main() {
-    partOne(getImageFromFile())
-    partTwo(getImageFromFile())
+        .let { image ->
+            partOne(image)
+            partTwo(image)
+        }
 }
 
-private fun partOne(image: Image) {
-    val rowsWithoutGalaxies = image.findRowsWithoutGalaxies().reversed()
-    val columnsWithoutGalaxies = image.findColumnsWithoutGalaxies().reversed()
+private fun partOne(image: Image) =
+    image.findGalaxyDistanceSumAfterExpansion(expansionFactor = 2).also(::println)
 
-    for (i in rowsWithoutGalaxies) {
-        image.add(i, CharArray(image[0].size) { '.' }.toMutableList())
-    }
+private fun partTwo(image: Image) =
+    image.findGalaxyDistanceSumAfterExpansion(expansionFactor = 1_000_000).also(::println)
 
-    for (i in columnsWithoutGalaxies) {
-        for (j in image.indices) {
-            image[j].add(i, '.')
-        }
-    }
-
-    ArrayList(image.findGalaxyPositions().values)
-        .generateGalaxyPairs()
-        .distanceSum()
-        .also(::println)
-}
-
-private fun partTwo(image: Image) {
-    val rowsWithoutGalaxies = image.findRowsWithoutGalaxies().reversed()
-    val columnsWithoutGalaxies = image.findColumnsWithoutGalaxies().reversed()
-    val galaxyMap = image.findGalaxyPositions()
-
-    for (i in rowsWithoutGalaxies) {
-        for ((current, new) in galaxyMap) {
-            if (current.first > i) {
-                galaxyMap[current] = (new.first + 999_999) to new.second
-            }
-        }
-    }
-
-    for (i in columnsWithoutGalaxies) {
-        for ((current, new) in galaxyMap) {
-            if (current.second > i) {
-                galaxyMap[current] = new.first to (new.second + 999_999)
-            }
-        }
-    }
-
-    ArrayList(galaxyMap.values.toList())
-        .generateGalaxyPairs()
-        .distanceSum()
-        .also(::println)
-}
+private fun Image.findGalaxyDistanceSumAfterExpansion(
+    expansionFactor: Int
+): Long =
+    findGalaxyPositions()
+        .expand(
+            factor = expansionFactor,
+            rowsWithoutGalaxies = findRowsWithoutGalaxies(),
+            columnsWithoutGalaxies = findColumnsWithoutGalaxies()
+        ).generateGalaxyPairs().distanceSum()
 
 private fun Image.findRowsWithoutGalaxies(): List<Int> =
     withIndex()
@@ -78,19 +47,20 @@ private fun Image.findColumnsWithoutGalaxies(): List<Int> {
     return columns
 }
 
-private fun ArrayList<GalaxyPosition>.generateGalaxyPairs(): HashSet<Pair<GalaxyPosition, GalaxyPosition>> {
+private fun HashMap<GalaxyPosition, GalaxyPosition>.generateGalaxyPairs(): HashSet<Pair<GalaxyPosition, GalaxyPosition>> {
     val galaxyPairs = HashSet<Pair<GalaxyPosition, GalaxyPosition>>()
-    for (i in indices) {
-        for (j in indices) {
+    val positions = ArrayList(values)
+    for (i in positions.indices) {
+        for (j in positions.indices) {
             if (i == j) {
                 continue
             }
-            if (galaxyPairs.contains(this[i] to this[j])
-                || galaxyPairs.contains(this[j] to this[i])
+            if (galaxyPairs.contains(positions[i] to positions[j])
+                || galaxyPairs.contains(positions[j] to positions[i])
             ) {
                 continue
             }
-            galaxyPairs.add(this[i] to this[j])
+            galaxyPairs.add(positions[i] to positions[j])
         }
     }
     return galaxyPairs
@@ -107,6 +77,30 @@ private fun Image.findGalaxyPositions(): HashMap<GalaxyPosition, GalaxyPosition>
         }
     }
     return galaxyMap
+}
+
+private fun HashMap<GalaxyPosition, GalaxyPosition>.expand(
+    factor: Int,
+    rowsWithoutGalaxies: List<Int>,
+    columnsWithoutGalaxies: List<Int>
+): HashMap<GalaxyPosition, GalaxyPosition> {
+    for (i in rowsWithoutGalaxies) {
+        for ((current, new) in this) {
+            if (current.first > i) {
+                this[current] = (new.first + factor - 1) to new.second
+            }
+        }
+    }
+
+    for (i in columnsWithoutGalaxies) {
+        for ((current, new) in this) {
+            if (current.second > i) {
+                this[current] = new.first to (new.second + factor - 1)
+            }
+        }
+    }
+
+    return this
 }
 
 private fun HashSet<Pair<GalaxyPosition, GalaxyPosition>>.distanceSum(): Long =
